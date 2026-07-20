@@ -27,7 +27,7 @@
     <li><a href="#genres">Genres</a></li>
     <li><a href="#new-arrivals">New Releases</a></li>
     <li><a href="#cta">About</a></li>
-    <a href="library.html">Library</a>
+    <a href="library.html" id="nav-library" style="display: none;">Library</a>
   </ul>
   <div class="nav-actions">
     <button class="btn-ghost" onclick="window.location.href='sign.html'">
@@ -83,7 +83,7 @@
       <button class="btn-hero-primary" onclick="window.location.href='sign.html'">
   Start Reading Free
 </button>
-      <button class="btn-hero-ghost">Browse Library →</button>
+      <button class="btn-hero-ghost" >Browse Library →</button>
     </div>
     <div class="hero-stats">
       <div class="stat-item">
@@ -652,6 +652,14 @@
   const { createClient } = supabase
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON)
 
+   
+  async function checkNavAuth() {
+    const { data: { session } } = await sb.auth.getSession()
+    if (session) {
+      document.getElementById('nav-library').style.display = 'inline'
+    }
+  }
+  checkNavAuth()
 
 
 gsap.registerPlugin(ScrollTrigger)
@@ -903,6 +911,8 @@ sb.auth.getSession().then(({ data: { session } }) => {
     `
   }
 })
+
+
 
 </script>
 </body>
