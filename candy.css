@@ -211,6 +211,8 @@ nav {
   perspective-origin: 50% 50%;
 }
 
+
+
 .book-3d {
   width: 220px;
   height: 305px;
@@ -925,12 +927,13 @@ footer {
   .hero-btns { justify-content: center; }
   .hero-stats { justify-content: center; }
   section { padding: 60px 24px; }
-  .section-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .section-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .books-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .arrivals-grid { grid-template-columns: 1fr; }
   #cta { margin: 0 24px 60px; padding: 40px 32px; flex-direction: column; }
   footer { padding: 32px 24px; flex-direction: column; gap: 24px; text-align: center; }
   .footer-links { justify-content: center; }
+ 
 }
 
 @media (max-width: 480px) {

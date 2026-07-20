@@ -184,7 +184,9 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
     <input type="text" id="librarySearch" placeholder="Search the library…">
   </div>
   <div class="nav-user"><div class="avatar-sm">AR</div>Arrystay</div>
+
 </nav>
+
 
 <div class="wrap">
 
@@ -295,7 +297,12 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
     <div class="sp-bar-track"><div class="sp-bar-fill" id="spFill"></div></div>
     <span id="spDur">0:00</span>
   </div>
-  <input type="text" class="lang-select" id="spPlaylistInput" placeholder="Paste playlist link…" style="width:160px;">
+<input
+    type="text"
+    class="lang-select spotify-input"
+    id="spPlaylistInput"
+    placeholder="Paste playlist link…">
+
   <button class="ctrl-btn" id="spPlayPlaylistBtn">Play</button>
   <button class="ctrl-btn sp-connect" id="spConnectBtn">Connect Spotify</button>
 </div>
@@ -631,21 +638,31 @@ function fmtTime(ms){
   return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 }
 
-function extractPlaylistUri(input){
-  input = input.trim();
-  if(input.startsWith('spotify:playlist:')) return input;
-  const match = input.match(/playlist\/([a-zA-Z0-9]+)/);
-  if(match) return 'spotify:playlist:' + match[1];
-  if(/^[a-zA-Z0-9]{22}$/.test(input)) return 'spotify:playlist:' + input;
-  return null;
-}
+
 
 async function playPlaylist(){
   const token = localStorage.getItem('sp_token');
   if(!token){ alert('Connect Spotify first.'); return; }
   if(!spDeviceId){ alert('Player is still connecting — wait a second and try again.'); return; }
   const raw = document.getElementById('spPlaylistInput').value;
-  const uri = extractPlaylistUri(raw);
+  function parseSpotifyLink(input){
+  input = input.trim();
+
+  // Direct URI format like spotify:track:xxxx
+  if(/^spotify:(track|album|playlist):[a-zA-Z0-9]+$/.test(input)){
+    const [, type, id] = input.split(':');
+    return { type, id };
+  }
+
+  // Full URL format
+  const match = input.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
+  if(match) return { type: match[1], id: match[2] };
+
+  // Bare ID fallback — assume playlist
+  if(/^[a-zA-Z0-9]{22}$/.test(input)) return { type: 'playlist', id: input };
+
+  return null;
+}
   if(!uri){ alert('That doesn\'t look like a valid playlist link or URI.'); return; }
 
   const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spDeviceId}`, {
@@ -674,6 +691,43 @@ document.querySelector('.sp-bar-track').addEventListener('click', async (e)=>{
   const state = await spPlayer.getCurrentState();
   if(state) spPlayer.seek(state.duration * pct);
 });
+
+
+
+function isMobileDevice() {
+    return (
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth <= 768
+    );
+}
+
+if (isMobileDevice()) {
+    document.body.innerHTML = `
+        <div style="
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            flex-direction:column;
+            width:100vw;
+            height:100vh;
+            background:#0b1020;
+            color:white;
+            font-family:Arial,sans-serif;
+            text-align:center;
+            padding:20px;
+        ">
+            <h1 style="font-size:2rem;margin-bottom:15px;">
+                Desktop Only
+            </h1>
+
+            <p style="max-width:420px;line-height:1.6;">
+                This website is only available on desktop or laptop devices.
+                Please visit using a larger screen for the best experience.
+            </p>
+        </div>
+    `;
+}
+
 </script>
 </body>
 </html>

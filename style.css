@@ -114,8 +114,8 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* Spotify bar */
-.spotify-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:150;padding:12px 20px;
-  display:flex;align-items:center;gap:16px;}
+.spotify-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:150;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;}
 .sp-art{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1db954,#14b8a6);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .sp-art svg{width:22px;height:22px;color:#fff;}
@@ -131,10 +131,54 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
 .sp-progress span{font-family:var(--font-mono);font-size:.68rem;color:var(--text-low);}
 .sp-bar-track{flex:1;height:4px;border-radius:4px;background:var(--glass-border);position:relative;cursor:pointer;}
 .sp-bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#1db954,#22d3ee);width:0%;}
-.sp-connect{margin-left:auto;}
-@media(max-width:760px){
-  .sp-progress,.sp-track{display:none;}
-  .reader-body{grid-template-columns:1fr;}
-  .toc{display:none;}
-  .nav-links{display:none;}
+.sp-connect{    flex:1;
+    min-width:180px;}
+
+.spotify-input{
+    flex:1;
+    min-width:0;
+    width:100%;
+}
+
+@media (max-width: 760px){
+
+  /* Allow Spotify bar to wrap */
+  .spotify-bar{
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Hide track name to save space */
+  .sp-track{
+    display: none;
+  }
+
+  /* Hide progress bar on phones */
+  .sp-progress{
+    display: none;
+  }
+
+  /* Move playlist controls to the next line */
+  .sp-connect{
+    width: 100%;
+    margin-left: 0;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Make the input fill available space */
+  #spPlaylistInput{
+    flex: 1;
+    min-width: 0;
+    width: auto !important;   /* Overrides the inline width:160px */
+  }
+
+  /* Keep buttons from shrinking */
+  #spPlayPlaylistBtn,
+  #spConnectBtn{
+    flex-shrink: 0;
+  }
+
 }
