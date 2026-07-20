@@ -407,6 +407,45 @@ function spawnParticle() {
 }
 for (let i = 0; i < 14; i++) spawnParticle()
 setInterval(spawnParticle, 2200)
+
+
+
+function isMobileDevice() {
+    return (
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth <= 768
+    );
+}
+
+if (isMobileDevice()) {
+    document.body.innerHTML = `
+        <div style="
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            flex-direction:column;
+            width:100vw;
+            height:100vh;
+            background:#0b1020;
+            color:white;
+            font-family:Arial,sans-serif;
+            text-align:center;
+            padding:20px;
+        ">
+            <h1 style="font-size:2rem;margin-bottom:15px;">
+                Desktop Only
+            </h1>
+
+            <p style="max-width:420px;line-height:1.6;">
+                This website is only available on desktop or laptop devices.
+                Please visit using a larger screen for the best experience.
+            </p>
+        </div>
+    `;
+}
+
+
+
 </script>
 </body>
 </html>
