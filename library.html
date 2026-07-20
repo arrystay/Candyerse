@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArrystayLib — Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy-0:#fdf3ea; --navy-1:#f8e6d2;
+  --blue:#e2694b; --purple:#d97757; --cyan:#f0a860; --teal:#c9835f;
+  --glass-bg:rgba(255,255,255,0.5); --glass-bg-strong:rgba(255,255,255,0.74);
+  --glass-border:rgba(160,105,75,0.18);
+  --text-hi:#2b1d16; --text-mid:#7a5d4c; --text-low:#a68b7a;
+  --radius:22px; --radius-sm:14px;
+  --shadow-glass:0 8px 32px rgba(150,100,60,0.14);
+  --font-display:'Playfair Display',serif; --font-body:'Inter',sans-serif;
+  --font-read:'Merriweather',serif; --font-mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font-body);color:var(--text-hi);min-height:100vh;background:var(--navy-0);overflow-x:hidden;}
+.bg-scene{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(ellipse at 20% 20%, rgba(217,119,87,0.28), transparent 55%),
+  radial-gradient(ellipse at 80% 15%, rgba(240,168,96,0.26), transparent 50%),
+  radial-gradient(ellipse at 50% 90%, rgba(201,131,95,0.22), transparent 55%),
+  radial-gradient(ellipse at 90% 80%, rgba(226,105,75,0.22), transparent 50%), var(--navy-0);
+  background-size:200% 200%; animation:drift 24s ease-in-out infinite;
+}
+@keyframes drift{0%{background-position:0% 0%;}50%{background-position:100% 60%;}100%{background-position:0% 0%;}}
+::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:var(--glass-border);border-radius:10px;}
+
+.glass{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);border-radius:var(--radius);box-shadow:var(--shadow-glass);}
+
+/* Nav */
+.nav{position:sticky;top:16px;z-index:80;margin:16px;padding:14px 22px;display:flex;align-items:center;gap:24px;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:1.1rem;}
+.nav-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--purple),var(--cyan));box-shadow:0 0 16px rgba(217,119,87,.6);}
+.nav-links{display:flex;gap:6px;margin-left:8px;}
+.nav-links a{color:var(--text-mid);text-decoration:none;font-size:.86rem;font-weight:500;padding:9px 14px;border-radius:100px;transition:.2s;}
+.nav-links a:hover{color:var(--text-hi);background:var(--glass-bg-strong);}
+.nav-links a.active{color:#fff;background:linear-gradient(90deg,rgba(226,105,75,.35),rgba(217,119,87,.28));box-shadow:0 0 16px rgba(217,119,87,.3);}
+.nav-search{flex:1;max-width:320px;display:flex;align-items:center;gap:8px;background:var(--glass-bg-strong);
+  border:1px solid var(--glass-border);border-radius:100px;padding:9px 15px;margin-left:auto;}
+.nav-search input{background:none;border:none;outline:none;color:var(--text-hi);font-size:.84rem;width:100%;}
+.nav-search svg{width:15px;height:15px;color:var(--text-low);flex-shrink:0;}
+.nav-user{display:flex;align-items:center;gap:12px;font-size:.84rem;color:var(--text-mid);}
+.avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:.75rem;color:#fff;}
+
+/* Library view */
+.wrap{max-width:1320px;margin:0 auto;padding:10px 16px 140px;}
+.lib-hero{padding:6px 8px 28px;}
+.lib-title{font-family:var(--font-display);font-size:2.1rem;font-weight:700;}
+.lib-sub{color:var(--text-low);font-size:.9rem;margin-top:4px;}
+
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 26px;}
+.chip-f{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.4px;padding:8px 16px;border-radius:100px;
+  background:var(--glass-bg-strong);border:1px solid var(--glass-border);color:var(--text-mid);cursor:pointer;transition:.2s;}
+.chip-f:hover{color:var(--text-hi);}
+.chip-f.active{color:#fff;background:linear-gradient(90deg,var(--blue),var(--purple));box-shadow:0 0 16px rgba(217,119,87,.4);}
+
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:22px;}
+.book-card{cursor:pointer;perspective:900px;}
+.book-inner{border-radius:18px;overflow:hidden;transition:transform .25s ease, box-shadow .25s ease;
+  transform-style:preserve-3d;box-shadow:0 10px 26px rgba(0,0,0,.4);}
+.book-card:hover .book-inner{box-shadow:0 22px 46px rgba(0,0,0,.55);}
+.book-cover-wrap{position:relative;width:100%;aspect-ratio:2/3;overflow:hidden;}
+.book-cover-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;}
+.book-card:hover .book-cover-wrap img{transform:scale(1.06);}
+.book-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(5,7,20,.9) 100%);
+  display:flex;align-items:flex-end;padding:14px;opacity:0;transition:.25s;}
+.book-card:hover .book-overlay{opacity:1;}
+.read-btn{font-size:.74rem;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--blue),var(--purple));
+  padding:7px 14px;border-radius:100px;display:inline-flex;align-items:center;gap:6px;}
+.book-meta{padding:12px 4px 0;}
+.book-meta .t{font-family:var(--font-display);font-weight:600;font-size:.92rem;line-height:1.25;}
+.book-meta .a{color:var(--text-low);font-size:.76rem;margin-top:2px;}
+.book-badge{display:inline-block;margin-top:6px;font-family:var(--font-mono);font-size:.62rem;color:var(--cyan);
+  background:rgba(240,168,96,.12);padding:2px 8px;border-radius:100px;}
+
+/* Reader */
+.reader{display:none;}
+.reader.active{display:block;}
+.book-grid-view.hidden{display:none;}
+.reader-top{display:flex;align-items:center;gap:14px;padding:14px 20px;margin-bottom:18px;flex-wrap:wrap;}
+.back-btn{display:flex;align-items:center;gap:8px;color:var(--text-mid);cursor:pointer;font-size:.85rem;font-weight:500;}
+.back-btn:hover{color:var(--text-hi);}
+.back-btn svg{width:16px;height:16px;}
+.reader-title-block{margin-right:auto;}
+.reader-title-block .t{font-family:var(--font-display);font-weight:700;font-size:1.05rem;}
+.reader-title-block .a{color:var(--text-low);font-size:.78rem;}
+.reader-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ctrl-btn{display:flex;align-items:center;gap:6px;background:var(--glass-bg-strong);border:1px solid var(--glass-border);
+  color:var(--text-hi);border-radius:100px;padding:8px 13px;font-size:.78rem;cursor:pointer;}
+.ctrl-btn svg{width:14px;height:14px;}
+select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glass-border);color:var(--text-hi);
+  border-radius:100px;padding:8px 14px;font-size:.78rem;outline:none;cursor:pointer;font-family:var(--font-body);}
+
+.reader-body{display:grid;grid-template-columns:230px 1fr;gap:18px;padding:0 16px;}
+.toc{padding:18px 14px;max-height:70vh;overflow-y:auto;position:sticky;top:100px;}
+.toc h4{font-family:var(--font-mono);font-size:.68rem;letter-spacing:1px;color:var(--text-low);
+  text-transform:uppercase;margin-bottom:10px;padding:0 8px;}
+.toc-item{padding:9px 10px;border-radius:10px;font-size:.82rem;color:var(--text-mid);cursor:pointer;margin-bottom:2px;}
+.toc-item:hover{background:var(--glass-bg-strong);color:var(--text-hi);}
+.toc-item.active{color:#fff;background:linear-gradient(90deg,rgba(226,105,75,.35),rgba(217,119,87,.25));}
+
+.page{padding:36px 44px;min-height:60vh;}
+.page.theme-sepia{background:#f2dcb8;}
+.page.theme-night{background:#241812;}
+.page.theme-night .chapter-text, .page.theme-night .chapter-h{color:#f4e6d8;}
+.chapter-h{font-family:var(--font-display);font-weight:700;font-size:1.4rem;margin-bottom:18px;}
+.chapter-text{font-family:var(--font-read);line-height:1.9;font-size:1.05rem;color:var(--text-hi);}
+.chapter-text p{margin-bottom:1.1em;transition:background .3s;}
+.chapter-text p.reading-active{background:rgba(240,168,96,.18);border-radius:8px;padding:4px 8px;margin-left:-8px;}
+.translate-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:.68rem;
+  color:var(--cyan);background:rgba(240,168,96,.12);padding:4px 10px;border-radius:100px;margin-bottom:16px;}
+.font-controls{display:flex;gap:6px;align-items:center;}
+.f-btn{width:30px;height:30px;border-radius:8px;background:var(--glass-bg-strong);border:1px solid var(--glass-border);
+  color:var(--text-hi);cursor:pointer;font-family:var(--font-mono);font-size:.8rem;}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:var(--cyan);
+  border-radius:50%;display:inline-block;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Spotify bar */
+.spotify-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:150;padding:12px 20px;
+  display:flex;align-items:center;gap:16px;}
+.sp-art{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1db954,#c9835f);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sp-art svg{width:22px;height:22px;color:#fff;}
+.sp-track{min-width:150px;}
+.sp-track .n{font-size:.84rem;font-weight:600;}
+.sp-track .r{font-size:.72rem;color:var(--text-low);}
+.sp-controls{display:flex;align-items:center;gap:10px;margin:0 6px;}
+.sp-btn{width:36px;height:36px;border-radius:50%;background:var(--glass-bg-strong);border:1px solid var(--glass-border);
+  color:var(--text-hi);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sp-btn.play{width:42px;height:42px;background:linear-gradient(135deg,#1db954,#c9835f);}
+.sp-btn svg{width:16px;height:16px;}
+.sp-progress{flex:1;display:flex;align-items:center;gap:10px;}
+.sp-progress span{font-family:var(--font-mono);font-size:.68rem;color:var(--text-low);}
+.sp-bar-track{flex:1;height:4px;border-radius:4px;background:var(--glass-border);position:relative;cursor:pointer;}
+.sp-bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#1db954,#f0a860);width:0%;}
+.sp-connect{margin-left:auto;}
+@media(max-width:760px){
+  .sp-progress,.sp-track{display:none;}
+  .reader-body{grid-template-columns:1fr;}
+  .toc{display:none;}
+  .nav-links{display:none;}
+}
+.favorite-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:50%;
+    background:transparent;
+    cursor:pointer;
+    font-size:20px;
+    z-index:1;
+}
+
+.favorite-btn:hover{
+    transform:scale(1.1);
+}
+</style>
+</head>
+<body>
+<div class="bg-scene"></div>
+
+<nav class="nav glass">
+  <div class="nav-brand"><div class="nav-mark"></div>Candyverse</div>
+  <div class="nav-links">
+    
+    <a href="#" class="active">Library</a><a href="home.html">Home</a>
+  </div>
+
+  <div class="nav-search">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input type="text" id="librarySearch" placeholder="Search the library…">
+  </div>
+  <div class="nav-user"><div class="avatar-sm">AR</div>Arrystay</div>
+</nav>
+
+<div class="wrap">
+
+  <!-- LIBRARY GRID VIEW -->
+  <div class="book-grid-view" id="gridView">
+    <div class="lib-hero">
+      <div class="lib-title">The Library</div>
+      <div class="lib-sub">Every book you've added, ready to read, translate, and listen to.</div>
+    </div>
+    <div class="filters" id="filters">
+      <div class="chip-f active" data-genre="">All</div>
+      <div class="chip-f" data-genre="Dark Romance">Dark Romance</div>
+       <div class="chip-f" data-genre="Romance">Romance</div>
+      <div class="chip-f" data-genre="Fantasy">Fantasy</div>
+      <div class="chip-f" data-genre="Thriller">Thriller</div>
+      <div class="chip-f" data-genre="New Adult">New Adult</div>
+    </div>
+    <div class="book-grid" id="bookGrid"></div>
+  </div>
+
+  <!-- READER VIEW -->
+  <div class="reader" id="readerView">
+    <div class="reader-top glass">
+      <div class="back-btn" id="backBtn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Library
+      </div>
+      <div class="reader-title-block">
+        <div class="t" id="readerTitle">—</div>
+        <div class="a" id="readerAuthor">—</div>
+      </div>
+      <div class="reader-controls">
+        <div class="ctrl-btn" id="narrateBtn" onclick="toggleNarration()">
+          <svg id="narrateIcon" fill="currentColor" viewBox="0 0 24 24" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
+          <span id="narrateBtnText">Listen</span>
+        </div>
+        <div class="font-controls">
+          <div class="f-btn" id="fontDown">A−</div>
+          <div class="f-btn" id="fontUp">A+</div>
+        </div>
+        <select class="lang-select" id="themeSelect">
+          <option value="cream">Cream page</option>
+          <option value="sepia">Sepia page</option>
+          <option value="night">Night reading</option>
+        </select>
+        <select class="lang-select" id="langSelect">
+          <option value="">Original language</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="pt">Portuguese</option>
+          <option value="it">Italian</option>
+          <option value="nl">Dutch</option>
+          <option value="ru">Russian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh">Chinese</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="bn">Bengali</option>
+          <option value="ur">Urdu</option>
+          <option value="tr">Turkish</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+          <option value="id">Indonesian</option>
+          <option value="ms">Malay</option>
+          <option value="tl">Filipino</option>
+          <option value="pl">Polish</option>
+          <option value="uk">Ukrainian</option>
+          <option value="ro">Romanian</option>
+          <option value="el">Greek</option>
+          <option value="he">Hebrew</option>
+          <option value="sv">Swedish</option>
+          <option value="no">Norwegian</option>
+          <option value="da">Danish</option>
+          <option value="fi">Finnish</option>
+          <option value="cs">Czech</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="reader-body">
+      <div class="toc glass">
+        <h4>Chapters</h4>
+        <div id="tocList"></div>
+      </div>
+      <div class="page glass" id="pageEl">
+        <div id="translateTag" style="display:none;" class="translate-tag"><span class="spinner" id="translateSpin" style="display:none;"></span><span id="translateTagText"></span></div>
+        <div class="chapter-h" id="chapterHeading">—</div>
+        <div class="chapter-text" id="chapterText"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SPOTIFY BAR -->
+<div class="spotify-bar glass">
+  <div class="sp-art"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm4.6 14.4c-.2.3-.6.4-.9.2-2.5-1.5-5.6-1.9-9.3-1a.7.7 0 11-.3-1.3c4-.9 7.5-.5 10.3 1.2.3.2.4.6.2.9zm1.2-2.8c-.2.4-.7.5-1.1.3-2.8-1.7-7.1-2.2-10.4-1.2a.85.85 0 11-.5-1.6c3.8-1.1 8.5-.6 11.7 1.4.4.2.5.7.3 1.1zm.1-2.9C14.6 9 8.9 8.8 5.7 9.8a1 1 0 11-.6-1.9c3.7-1.1 10-.9 13.9 1.4.5.3.7 1 .3 1.5-.3.5-1 .6-1.4.3z"/></svg></div>
+  <div class="sp-track"><div class="n" id="spTrackName">Not connected</div><div class="r" id="spTrackArtist">Connect Spotify to play your playlist</div></div>
+  <div class="sp-controls">
+    <div class="sp-btn" id="spPrev"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5"/></svg></div>
+    <div class="sp-btn play" id="spPlay"><svg fill="currentColor" viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg></div>
+    <div class="sp-btn" id="spNext"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zM19 5v14"/></svg></div>
+  </div>
+  <div class="sp-progress">
+    <span id="spCur">0:00</span>
+    <div class="sp-bar-track"><div class="sp-bar-fill" id="spFill"></div></div>
+    <span id="spDur">0:00</span>
+  </div>
+  <input type="text" class="lang-select" id="spPlaylistInput" placeholder="Paste playlist link…" style="width:160px;">
+  <button class="ctrl-btn" id="spPlayPlaylistBtn">Play</button>
+  <button class="ctrl-btn sp-connect" id="spConnectBtn">Connect Spotify</button>
+</div>
+
+<script>
+/* =====================================================================
+   SUPABASE — same project as the admin dashboard.
+   Paste the same Project URL + anon key you used there.
+===================================================================== */
+const SUPABASE_URL = 'https://darmcgemkjzjbdsskllw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_QA0i0t0krR5zaZgNjHF8Jg_7Fn_D4nr';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let books = [];
+
+async function loadBooks(){
+  const { data, error } = await sb.from('books').select('id,title,author,cover_url,category,rating,created_at').order('created_at', {ascending:false});
+  if(error){ console.error('Could not load books:', error.message); return; }
+  books = data || [];
+  renderGrid(books);
+}
+
+// Live sync: the moment admin adds/edits/removes a book, this page updates without a reload
+sb.channel('books-public-sync')
+  .on('postgres_changes', {event:'*', schema:'public', table:'books'}, loadBooks)
+  .subscribe();
+
+/* ================= GRID ================= */
+function renderGrid(list){
+  if(!list.length){
+    document.getElementById('bookGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--text-low);">No books in the library yet.</div>`;
+    return;
+  }
+  document.getElementById('bookGrid').innerHTML = list.map(b=>`
+    <div class="book-card" onclick="openBook('${b.id}')">
+        <button class="favorite-btn"
+            onclick="toggleFavorite(event,'${b.id}')">
+        ${favorites.includes(b.id) ? "❤️" : "🤍"}
+    </button>
+      <div class="book-inner">
+      
+        <div class="book-cover-wrap">
+          <img src="${b.cover_url||''}" alt="${b.title}">
+          <div class="book-overlay"><div class="read-btn">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Read Now</div></div>
+        </div>
+      </div>
+      <div class="book-meta">
+        <div class="t">${b.title}</div>
+        <div class="a">${b.author}</div>
+        <div class="book-badge">★ ${b.rating||'—'} · ${b.category||'Uncategorized'}</div>
+      </div>
+    </div>`).join('');
+}
+loadBooks();
+
+document.querySelectorAll('.chip-f').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.chip-f').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    const g = chip.getAttribute('data-genre');
+    renderGrid(g ? books.filter(b=>b.category===g) : books);
+  });
+});
+document.getElementById('librarySearch').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase();
+  renderGrid(books.filter(b=>b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)));
+});
+
+// favourites
+let favorites = [];
+
+async function loadFavorites() {
+  const user = (await sb.auth.getUser()).data.user;
+
+  if (!user) return;
+
+  const { data, error } = await sb
+    .from("favorites")
+    .select("book_id")
+    .eq("user_id", user.id);
+
+  if (!error) {
+    favorites = data.map(f => f.book_id);
+    renderGrid(books);
+  }
+}
+
+
+/* ================= READER ================= */
+let currentBook = null, currentChapter = 0, fontSize = 1.05;
+
+async function openBook(id) {
+  const { data, error } = await sb
+    .from("books")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Failed to load book:", error);
+    alert("Failed to load book.");
+    return;
+  }
+
+  currentBook = data;
+  currentChapter = 0;
+
+  stopNarration();
+
+  document.getElementById("gridView").classList.add("hidden");
+  document.getElementById("readerView").classList.add("active");
+
+  document.getElementById("readerTitle").textContent = currentBook.title;
+  document.getElementById("readerAuthor").textContent = currentBook.author;
+
+  document.getElementById("langSelect").value = "";
+
+  renderTOC();
+  renderChapter();
+}
+
+document.getElementById('backBtn').addEventListener('click',()=>{
+  stopNarration();
+  document.getElementById('readerView').classList.remove('active');
+  document.getElementById('gridView').classList.remove('hidden');
+});
+
+function renderTOC(){
+  const chapters = currentBook.chapters || [];
+  document.getElementById('tocList').innerHTML = chapters.length
+    ? chapters.map((c,i)=>`<div class="toc-item ${i===currentChapter?'active':''}" onclick="goChapter(${i})">${c.h}</div>`).join('')
+    : `<div style="color:var(--text-low);font-size:.8rem;padding:8px;">No chapters uploaded yet.</div>`;
+}
+function goChapter(i){ stopNarration(); currentChapter=i; renderTOC(); renderChapter(); }
+
+function renderChapter(){
+  const chapters = currentBook.chapters || [];
+  const ch = chapters[currentChapter];
+  if(!ch){
+    document.getElementById('chapterHeading').textContent = 'No chapters yet';
+    document.getElementById('chapterText').innerHTML = '<p>This book hasn\'t had any chapters uploaded through the admin panel yet.</p>';
+    document.getElementById('translateTag').style.display='none';
+    return;
+  }
+  document.getElementById('chapterHeading').textContent = ch.h;
+  document.getElementById('chapterText').innerHTML = ch.p.map(p=>`<p>${p}</p>`).join('');
+  document.getElementById('chapterText').style.fontSize = fontSize+'rem';
+  document.getElementById('translateTag').style.display='none';
+  document.getElementById('langSelect').value='';
+}
+
+document.getElementById('fontUp').addEventListener('click',()=>{fontSize=Math.min(1.6,fontSize+.1); document.getElementById('chapterText').style.fontSize=fontSize+'rem';});
+document.getElementById('fontDown').addEventListener('click',()=>{fontSize=Math.max(.8,fontSize-.1); document.getElementById('chapterText').style.fontSize=fontSize+'rem';});
+document.getElementById('themeSelect').addEventListener('change',e=>{
+  const page = document.getElementById('pageEl');
+  page.classList.remove('theme-sepia','theme-night');
+  if(e.target.value==='sepia') page.classList.add('theme-sepia');
+  if(e.target.value==='night') page.classList.add('theme-night');
+});
+
+/* ---- Translation via MyMemory (free, no key) ---- */
+let currentReadingLang = 'en';
+async function translateChapter(langCode){
+  const ch = currentBook.chapters[currentChapter];
+  const tag = document.getElementById('translateTag');
+  const spin = document.getElementById('translateSpin');
+  const tagText = document.getElementById('translateTagText');
+  stopNarration();
+  if(!langCode){ currentReadingLang='en'; renderChapter(); return; }
+  tag.style.display='inline-flex'; spin.style.display='inline-block';
+  tagText.textContent = 'Translating chapter…';
+  try{
+    const translated = [];
+    for(const para of ch.p){
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(para)}&langpair=en|${langCode}`);
+      const data = await res.json();
+      translated.push(data.responseData ? data.responseData.translatedText : para);
+    }
+    document.getElementById('chapterText').innerHTML = translated.map(p=>`<p>${p}</p>`).join('');
+    currentReadingLang = langCode;
+    spin.style.display='none';
+    tagText.textContent = 'Translated — ' + document.getElementById('langSelect').selectedOptions[0].text;
+  }catch(err){
+    spin.style.display='none';
+    tagText.textContent = 'Translation failed — showing original';
+    document.getElementById('chapterText').innerHTML = ch.p.map(p=>`<p>${p}</p>`).join('');
+  }
+}
+document.getElementById('langSelect').addEventListener('change', e=>translateChapter(e.target.value));
+
+/* ---- Listen: reads the current chapter aloud, paragraph by paragraph ---- */
+let narrating = false;
+function toggleNarration(){
+  narrating ? stopNarration() : startNarration();
+}
+function startNarration(){
+  const paras = document.querySelectorAll('#chapterText p');
+  if(!paras.length) return;
+  window.speechSynthesis.cancel();
+  narrating = true;
+  updateNarrateUI();
+  speakParagraph(Array.from(paras), 0);
+}
+function speakParagraph(paras, i){
+  if(!narrating || i>=paras.length){ stopNarration(); return; }
+  paras.forEach(p=>p.classList.remove('reading-active'));
+  paras[i].classList.add('reading-active');
+  paras[i].scrollIntoView({behavior:'smooth', block:'center'});
+  const utter = new SpeechSynthesisUtterance(paras[i].textContent);
+  utter.lang = currentReadingLang === 'en' ? 'en-US' : currentReadingLang;
+  utter.rate = 1;
+  utter.onend = () => speakParagraph(paras, i+1);
+  window.speechSynthesis.speak(utter);
+}
+function stopNarration(){
+  window.speechSynthesis.cancel();
+  narrating = false;
+  document.querySelectorAll('.reading-active').forEach(p=>p.classList.remove('reading-active'));
+  updateNarrateUI();
+}
+function updateNarrateUI(){
+  document.getElementById('narrateBtnText').textContent = narrating ? 'Stop' : 'Listen';
+  document.getElementById('narrateIcon').innerHTML = narrating
+    ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+/* ================= SPOTIFY (Authorization Code + PKCE + Web Playback SDK) =================
+   Setup required before this works:
+   1. Create an app at https://developer.spotify.com/dashboard
+   2. Set SPOTIFY_CLIENT_ID below to your app's Client ID
+   3. Add this exact page URL as a Redirect URI in your app settings
+   4. Requires the listener to have Spotify Premium (Web Playback SDK limitation)
+================================================================================ */
+const SPOTIFY_CLIENT_ID = 'fa0eeef532f64647937de6ed0b687bb5';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+const SCOPES = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state';
+
+function base64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function pkceChallenge(verifier){
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return base64url(digest);
+}
+function randomVerifier(len=64){
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return base64url(arr).slice(0,len);
+}
+
+async function spotifyLogin(){
+  const verifier = randomVerifier();
+  localStorage.setItem('sp_verifier', verifier);
+  const challenge = await pkceChallenge(verifier);
+  const params = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID, response_type:'code', redirect_uri:REDIRECT_URI,
+    code_challenge_method:'S256', code_challenge:challenge, scope:SCOPES
+  });
+  window.location = 'https://accounts.spotify.com/authorize?' + params.toString();
+}
+
+async function exchangeCodeForToken(code){
+  const verifier = localStorage.getItem('sp_verifier');
+  const body = new URLSearchParams({
+    client_id:SPOTIFY_CLIENT_ID, grant_type:'authorization_code', code, redirect_uri:REDIRECT_URI, code_verifier:verifier
+  });
+  const res = await fetch('https://accounts.spotify.com/api/token',{method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
+  const data = await res.json();
+  if(data.access_token){
+    localStorage.setItem('sp_token', data.access_token);
+    localStorage.setItem('sp_refresh', data.refresh_token || '');
+    window.history.replaceState({}, document.title, REDIRECT_URI);
+    initPlayer(data.access_token);
+  }
+}
+
+(function checkAuthReturn(){
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if(code) exchangeCodeForToken(code);
+  else{
+    const existing = localStorage.getItem('sp_token');
+    if(existing){ document.getElementById('spConnectBtn').textContent = 'Reconnect Spotify'; }
+  }
+})();
+
+let spPlayer = null, spDeviceId = null;
+window.onSpotifyWebPlaybackSDKReady = () => {
+  const token = localStorage.getItem('sp_token');
+  if(token) initPlayer(token);
+};
+
+function initPlayer(token){
+  spPlayer = new Spotify.Player({
+    name: 'ArrystayLib Reader Player',
+    getOAuthToken: cb => cb(token),
+    volume: 0.6
+  });
+
+  spPlayer.addListener('ready', ({device_id}) => {
+    spDeviceId = device_id;
+    document.getElementById('spConnectBtn').textContent = 'Connected';
+    document.getElementById('spTrackName').textContent = 'Ready to play';
+    document.getElementById('spTrackArtist').textContent = 'Pick a track from your Spotify app, or hit play here';
+  });
+
+  spPlayer.addListener('player_state_changed', state => {
+    if(!state) return;
+    const track = state.track_window.current_track;
+    document.getElementById('spTrackName').textContent = track.name;
+    document.getElementById('spTrackArtist').textContent = track.artists.map(a=>a.name).join(', ');
+    const dur = state.duration, pos = state.position;
+    document.getElementById('spCur').textContent = fmtTime(pos);
+    document.getElementById('spDur').textContent = fmtTime(dur);
+    document.getElementById('spFill').style.width = (dur? (pos/dur*100):0) + '%';
+    document.getElementById('playIcon').innerHTML = state.paused
+      ? '<path d="M8 5v14l11-7z"/>'
+      : '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  });
+
+  spPlayer.connect();
+}
+
+function fmtTime(ms){
+  const s = Math.floor(ms/1000);
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+
+function extractPlaylistUri(input){
+  input = input.trim();
+  if(input.startsWith('spotify:playlist:')) return input;
+  const match = input.match(/playlist\/([a-zA-Z0-9]+)/);
+  if(match) return 'spotify:playlist:' + match[1];
+  if(/^[a-zA-Z0-9]{22}$/.test(input)) return 'spotify:playlist:' + input;
+  return null;
+}
+
+async function playPlaylist(){
+  const token = localStorage.getItem('sp_token');
+  if(!token){ alert('Connect Spotify first.'); return; }
+  if(!spDeviceId){ alert('Player is still connecting — wait a second and try again.'); return; }
+  const raw = document.getElementById('spPlaylistInput').value;
+  const uri = extractPlaylistUri(raw);
+  if(!uri){ alert('That doesn\'t look like a valid playlist link or URI.'); return; }
+
+  const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spDeviceId}`, {
+    method:'PUT',
+    headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+    body: JSON.stringify({ context_uri: uri })
+  });
+  if(res.status === 404){
+    alert('No active device found — make sure Spotify is open somewhere and try reconnecting.');
+  } else if(res.status === 403){
+    alert('Playback control needs Spotify Premium on this account.');
+  } else if(!res.ok && res.status !== 204){
+    alert('Spotify rejected the request (status ' + res.status + '). Check the playlist link.');
+  }
+}
+
+document.getElementById('spPlayPlaylistBtn').addEventListener('click', playPlaylist);
+document.getElementById('spConnectBtn').addEventListener('click', spotifyLogin);
+document.getElementById('spPlay').addEventListener('click', ()=>{ if(spPlayer) spPlayer.togglePlay(); });
+document.getElementById('spNext').addEventListener('click', ()=>{ if(spPlayer) spPlayer.nextTrack(); });
+document.getElementById('spPrev').addEventListener('click', ()=>{ if(spPlayer) spPlayer.previousTrack(); });
+document.querySelector('.sp-bar-track').addEventListener('click', async (e)=>{
+  if(!spPlayer) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const state = await spPlayer.getCurrentState();
+  if(state) spPlayer.seek(state.duration * pct);
+});
+</script>
+</body>
+</html>
