@@ -341,10 +341,7 @@ function renderGrid(list){
   }
   document.getElementById('bookGrid').innerHTML = list.map(b=>`
     <div class="book-card" onclick="openBook('${b.id}')">
-        <button class="favorite-btn"
-            onclick="toggleFavorite(event,'${b.id}')">
-        ${favorites.includes(b.id) ? "❤️" : "🤍"}
-    </button>
+    
       <div class="book-inner">
       
         <div class="book-cover-wrap">
