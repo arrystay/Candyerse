@@ -745,30 +745,38 @@ async function playPlaylist(){
   if(!token){ alert('Connect Spotify first.'); return; }
   if(!spDeviceId){ alert('Player is still connecting — wait a second and try again.'); return; }
   const raw = document.getElementById('spPlaylistInput').value;
-  function parseSpotifyLink(input){
-  input = input.trim();
 
-  // Direct URI format like spotify:track:xxxx
-  if(/^spotify:(track|album|playlist):[a-zA-Z0-9]+$/.test(input)){
-    const [, type, id] = input.split(':');
-    return { type, id };
+  function parseSpotifyLink(input){
+    input = input.trim();
+
+    // Direct URI format like spotify:track:xxxx
+    if(/^spotify:(track|album|playlist):[a-zA-Z0-9]+$/.test(input)){
+      const [, type, id] = input.split(':');
+      return { type, id };
+    }
+
+    // Full URL format
+    const match = input.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
+    if(match) return { type: match[1], id: match[2] };
+
+    // Bare ID fallback — assume playlist
+    if(/^[a-zA-Z0-9]{22}$/.test(input)) return { type: 'playlist', id: input };
+
+    return null;
   }
 
-  // Full URL format
-  const match = input.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
-  if(match) return { type: match[1], id: match[2] };
+  const parsed = parseSpotifyLink(raw);
+  if(!parsed){ alert('That doesn\'t look like a valid playlist link or URI.'); return; }
 
-  // Bare ID fallback — assume playlist
-  if(/^[a-zA-Z0-9]{22}$/.test(input)) return { type: 'playlist', id: input };
-
-  return null;
-}
-  if(!uri){ alert('That doesn\'t look like a valid playlist link or URI.'); return; }
+  // Tracks play via "uris", playlists/albums play via "context_uri"
+  const body = parsed.type === 'track'
+    ? { uris: [`spotify:track:${parsed.id}`] }
+    : { context_uri: `spotify:${parsed.type}:${parsed.id}` };
 
   const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spDeviceId}`, {
     method:'PUT',
     headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-    body: JSON.stringify({ context_uri: uri })
+    body: JSON.stringify(body)
   });
   if(res.status === 404){
     alert('No active device found — make sure Spotify is open somewhere and try reconnecting.');
