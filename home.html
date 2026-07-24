@@ -22,19 +22,23 @@
     <div class="logo-accent"></div>
     ArryCandyverse
   </a>
-  <ul class="nav-links">
+  <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
     <li><a href="#trending">Trending</a></li>
     <li><a href="#genres">Genres</a></li>
     <li><a href="#new-arrivals">New Releases</a></li>
     <li><a href="#cta">About</a></li>
-    <a href="library.html" id="nav-library" style="display: none;">Library</a>
+    <li><a href="library.html" id="nav-library" style="display: none;">Library</a></li>
+    <li class="nav-links-mobile-signin"><a href="sign.html">Sign In</a></li>
   </ul>
   <div class="nav-actions">
     <button class="btn-ghost" onclick="window.location.href='sign.html'">
   Sign In
 </button>
     <!-- Hero button -->
-<button class="btn-hero-primary" onclick="window.location.href='sign.html'">
+<button class="btn-hero-primary nav-cta" onclick="window.location.href='sign.html'">
   Start Reading Free
 </button>
   </div>
@@ -762,6 +766,28 @@ gsap.registerPlugin(ScrollTrigger)
   animate()
 })()
 
+// ── Mobile nav toggle ──────────────────────────────────────
+const navToggle = document.getElementById('navToggle')
+const navLinksEl = document.getElementById('navLinks')
+navToggle.addEventListener('click', () => {
+  const isOpen = navLinksEl.classList.toggle('open')
+  navToggle.classList.toggle('open', isOpen)
+  navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false')
+})
+navLinksEl.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  navLinksEl.classList.remove('open')
+  navToggle.classList.remove('open')
+  navToggle.setAttribute('aria-expanded', 'false')
+}))
+document.addEventListener('click', e => {
+  if (!navLinksEl.classList.contains('open')) return
+  if (!navLinksEl.contains(e.target) && !navToggle.contains(e.target)) {
+    navLinksEl.classList.remove('open')
+    navToggle.classList.remove('open')
+    navToggle.setAttribute('aria-expanded', 'false')
+  }
+})
+
 // ── Hero book mouse tilt ──────────────────────────────────
 const heroBook = document.getElementById('hero-book')
 let mouseX = 0, mouseY = 0
@@ -771,6 +797,11 @@ document.addEventListener('mousemove', e => {
   mouseX = (e.clientX / window.innerWidth - 0.5)
   mouseY = (e.clientY / window.innerHeight - 0.5)
 })
+document.addEventListener('touchmove', e => {
+  if (!e.touches.length) return
+  mouseX = (e.touches[0].clientX / window.innerWidth - 0.5)
+  mouseY = (e.touches[0].clientY / window.innerHeight - 0.5)
+}, { passive: true })
 
 ;(function bookTiltLoop() {
   requestAnimationFrame(bookTiltLoop)
@@ -911,43 +942,6 @@ sb.auth.getSession().then(({ data: { session } }) => {
     `
   }
 })
-
-
-function isMobileDevice() {
-    return (
-        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768
-    );
-}
-
-if (isMobileDevice()) {
-    document.body.innerHTML = `
-        <div style="
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            flex-direction:column;
-            width:100vw;
-            height:100vh;
-            background:#0b1020;
-            color:white;
-            font-family:Arial,sans-serif;
-            text-align:center;
-            padding:20px;
-        ">
-            <h1 style="font-size:2rem;margin-bottom:15px;">
-                Desktop Only
-            </h1>
-
-            <p style="max-width:420px;line-height:1.6;">
-                This website is only available on desktop or laptop devices.
-                Please visit using a larger screen for the best experience.
-            </p>
-        </div>
-    `;
-}
-
-
 
 
 </script>

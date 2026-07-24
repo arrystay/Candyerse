@@ -134,11 +134,50 @@
   .toast.success { border-color: rgba(142,217,168,0.5); color: #2E7D52; }
 
   @media (max-width: 680px) {
-    .card-shell { grid-template-columns: 1fr; max-width: 420px; }
-    .brand-panel { padding: 36px 32px 28px; min-height: 0; }
-    .brand-headline { padding: 20px 0 16px; }
-    .brand-headline h1 { font-size: 26px; }
-    .form-panel { padding: 32px 28px 40px; }
+    .page { padding: 24px 16px; padding: 24px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+    .card-shell { grid-template-columns: 1fr; max-width: 420px; min-height: 0; border-radius: 28px; }
+    .brand-panel { padding: 32px 28px 24px; min-height: 0; }
+    .brand-headline { padding: 18px 0 14px; }
+    .brand-headline h1 { font-size: 24px; }
+    .brand-headline p { max-width: 100%; }
+    .form-panel { padding: 28px 24px 32px; }
+
+    /* Bigger, easier-to-tap controls on touch screens */
+    .tab-btn { padding: 10px 22px; font-size: 13px; }
+    .pw-toggle { padding: 8px; font-size: 19px; }
+    .social-btn { padding: 12px 14px; }
+    .jelly-btn { padding: 16px; }
+
+    /* Toast: keep it fully on-screen and readable instead of a fixed-width nowrap bar */
+    .toast {
+      left: 16px;
+      right: 16px;
+      bottom: 20px;
+      transform: translateY(80px);
+      max-width: none;
+      width: auto;
+      white-space: normal;
+      text-align: center;
+      padding: 12px 20px;
+    }
+    .toast.show { transform: translateY(0); }
+  }
+
+  @media (max-width: 380px) {
+    .page { padding: 16px 12px; }
+    .card-shell { border-radius: 22px; }
+    .brand-panel { padding: 26px 20px 20px; }
+    .brand-logo { font-size: 22px; }
+    .brand-headline h1 { font-size: 21px; }
+    .brand-headline p { font-size: 13.5px; }
+    .brand-floating-el { gap: 8px; }
+    .candy-pill { padding: 7px 14px; font-size: 12px; }
+    .form-panel { padding: 22px 18px 26px; }
+    .form-head h2 { font-size: 19px; }
+    .tabs { width: 100%; }
+    .tab-btn { flex: 1; padding: 10px 14px; }
+    .field input { padding: 12px 15px; font-size: 13.5px; }
+    .jelly-btn { font-size: 14px; }
   }
 </style>
 </head>
@@ -327,7 +366,11 @@ async function handleSignup() {
 
   setLoading('signup-btn', false, 'Create Account')
 
-  if (error) return showToast(error.message, 'error')
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+}
 
   showToast('Account created! Check your email to confirm 🍬', 'success')
     setTimeout(() => window.location.href = 'home.html', 1500)
@@ -408,41 +451,6 @@ function spawnParticle() {
 for (let i = 0; i < 14; i++) spawnParticle()
 setInterval(spawnParticle, 2200)
 
-
-
-function isMobileDevice() {
-    return (
-        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768
-    );
-}
-
-if (isMobileDevice()) {
-    document.body.innerHTML = `
-        <div style="
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            flex-direction:column;
-            width:100vw;
-            height:100vh;
-            background:#0b1020;
-            color:white;
-            font-family:Arial,sans-serif;
-            text-align:center;
-            padding:20px;
-        ">
-            <h1 style="font-size:2rem;margin-bottom:15px;">
-                Desktop Only
-            </h1>
-
-            <p style="max-width:420px;line-height:1.6;">
-                This website is only available on desktop or laptop devices.
-                Please visit using a larger screen for the best experience.
-            </p>
-        </div>
-    `;
-}
 
 
 

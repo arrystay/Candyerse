@@ -144,11 +144,73 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
 .sp-bar-track{flex:1;height:4px;border-radius:4px;background:var(--glass-border);position:relative;cursor:pointer;}
 .sp-bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;background:linear-gradient(90deg,#1db954,#f0a860);width:0%;}
 .sp-connect{margin-left:auto;}
+/* Chapters drawer toggle + backdrop (hidden on desktop) */
+.toc-toggle{display:none;}
+.toc-backdrop{display:none;position:fixed;inset:0;background:rgba(20,10,5,.45);z-index:190;}
+.toc-backdrop.open{display:block;}
+
+/* Prev / Next chapter controls */
+.chapter-nav{display:flex;gap:10px;margin-top:32px;padding-top:20px;border-top:1px solid var(--glass-border);}
+.chapter-nav button{flex:1;justify-content:center;font-size:.82rem;border:none;font-family:var(--font-body);}
+.chapter-nav button:disabled{opacity:.4;cursor:not-allowed;}
+
 @media(max-width:760px){
-  .sp-progress,.sp-track{display:none;}
-  .reader-body{grid-template-columns:1fr;}
-  .toc{display:none;}
-  .nav-links{display:none;}
+  /* Nav bar */
+  .nav{padding:10px 14px;gap:10px;margin:10px;}
+  .nav-brand{font-size:.95rem;gap:6px;}
+  .nav-mark{width:24px;height:24px;}
+  .nav-search{display:none;}
+  .nav-user{gap:8px;font-size:0;}
+  .avatar-sm{width:28px;height:28px;}
+
+  /* Library grid */
+  .wrap{padding:8px 12px 150px;}
+  .lib-title{font-size:1.5rem;}
+  .filters{margin:14px 0 18px;gap:6px;}
+  .chip-f{padding:7px 13px;font-size:.68rem;}
+  .book-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px;}
+
+  /* Reader toolbar */
+  .reader-top{padding:10px 14px;gap:10px;margin-bottom:10px;}
+  .reader-title-block{width:100%;margin-right:0;order:-1;}
+  .reader-title-block .t{font-size:.95rem;}
+  .reader-controls{width:100%;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    padding-bottom:4px;justify-content:flex-start;}
+  .reader-controls::-webkit-scrollbar{height:4px;}
+  .reader-controls > *{flex-shrink:0;}
+  .toc-toggle{display:inline-flex;}
+
+  /* Reader layout: TOC becomes a bottom-sheet drawer */
+  .reader-body{grid-template-columns:1fr;padding:0 10px;gap:0;}
+  .toc{
+    display:block;
+    position:fixed;
+    left:10px;right:10px;bottom:0;top:auto;
+    max-height:65vh;
+    margin:0 0 0;
+    border-radius:20px 20px 0 0;
+    z-index:200;
+    transform:translateY(115%);
+    transition:transform .3s ease;
+    box-shadow:0 -8px 32px rgba(0,0,0,.3);
+  }
+  .toc.open{transform:translateY(0);}
+
+  .page{padding:22px 16px 24px;}
+  .chapter-h{font-size:1.15rem;}
+  .chapter-text{font-size:1rem;line-height:1.8;}
+
+  /* Spotify bar */
+  .spotify-bar{flex-wrap:wrap;justify-content:center;gap:8px;padding:10px 14px;left:8px;right:8px;bottom:8px;}
+  .sp-track,.sp-progress{display:none;}
+  .sp-connect{width:100%;margin-left:0;display:flex;gap:8px;}
+  .spotify-input{flex:1;min-width:0;width:auto!important;}
+  #spPlayPlaylistBtn,#spConnectBtn{flex-shrink:0;white-space:nowrap;}
+}
+
+@media(max-width:400px){
+  .book-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;}
+  .lib-title{font-size:1.3rem;}
 }
 .favorite-btn{
     position:absolute;
@@ -219,6 +281,10 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
         <div class="a" id="readerAuthor">—</div>
       </div>
       <div class="reader-controls">
+        <div class="ctrl-btn toc-toggle" id="tocToggleBtn">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Chapters
+        </div>
         <div class="ctrl-btn" id="narrateBtn" onclick="toggleNarration()">
           <svg id="narrateIcon" fill="currentColor" viewBox="0 0 24 24" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
           <span id="narrateBtnText">Listen</span>
@@ -269,7 +335,8 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
     </div>
 
     <div class="reader-body">
-      <div class="toc glass">
+      <div class="toc-backdrop" id="tocBackdrop"></div>
+      <div class="toc glass" id="tocPanel">
         <h4>Chapters</h4>
         <div id="tocList"></div>
       </div>
@@ -277,6 +344,10 @@ select.lang-select{background:var(--glass-bg-strong);border:1px solid var(--glas
         <div id="translateTag" style="display:none;" class="translate-tag"><span class="spinner" id="translateSpin" style="display:none;"></span><span id="translateTagText"></span></div>
         <div class="chapter-h" id="chapterHeading">—</div>
         <div class="chapter-text" id="chapterText"></div>
+        <div class="chapter-nav">
+          <button class="ctrl-btn" id="prevChapterBtn" onclick="goChapter(currentChapter-1)">← Previous</button>
+          <button class="ctrl-btn" id="nextChapterBtn" onclick="goChapter(currentChapter+1)">Next →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -437,7 +508,30 @@ function renderTOC(){
     ? chapters.map((c,i)=>`<div class="toc-item ${i===currentChapter?'active':''}" onclick="goChapter(${i})">${c.h}</div>`).join('')
     : `<div style="color:var(--text-low);font-size:.8rem;padding:8px;">No chapters uploaded yet.</div>`;
 }
-function goChapter(i){ stopNarration(); currentChapter=i; renderTOC(); renderChapter(); }
+function goChapter(i){
+  const chapters = (currentBook && currentBook.chapters) || [];
+  if(i<0 || i>=chapters.length) return;
+  stopNarration();
+  currentChapter=i;
+  renderTOC();
+  renderChapter();
+  closeTocDrawer();
+  document.getElementById('pageEl').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* ---- Mobile chapters drawer ---- */
+function openTocDrawer(){
+  document.getElementById('tocPanel').classList.add('open');
+  document.getElementById('tocBackdrop').classList.add('open');
+}
+function closeTocDrawer(){
+  document.getElementById('tocPanel').classList.remove('open');
+  document.getElementById('tocBackdrop').classList.remove('open');
+}
+document.getElementById('tocToggleBtn').addEventListener('click', () => {
+  document.getElementById('tocPanel').classList.contains('open') ? closeTocDrawer() : openTocDrawer();
+});
+document.getElementById('tocBackdrop').addEventListener('click', closeTocDrawer);
 
 function renderChapter(){
   const chapters = currentBook.chapters || [];
@@ -446,6 +540,8 @@ function renderChapter(){
     document.getElementById('chapterHeading').textContent = 'No chapters yet';
     document.getElementById('chapterText').innerHTML = '<p>This book hasn\'t had any chapters uploaded through the admin panel yet.</p>';
     document.getElementById('translateTag').style.display='none';
+    document.getElementById('prevChapterBtn').disabled = true;
+    document.getElementById('nextChapterBtn').disabled = true;
     return;
   }
   document.getElementById('chapterHeading').textContent = ch.h;
@@ -453,6 +549,13 @@ function renderChapter(){
   document.getElementById('chapterText').style.fontSize = fontSize+'rem';
   document.getElementById('translateTag').style.display='none';
   document.getElementById('langSelect').value='';
+  updateChapterNavButtons();
+}
+
+function updateChapterNavButtons(){
+  const chapters = (currentBook && currentBook.chapters) || [];
+  document.getElementById('prevChapterBtn').disabled = currentChapter<=0;
+  document.getElementById('nextChapterBtn').disabled = currentChapter>=chapters.length-1;
 }
 
 document.getElementById('fontUp').addEventListener('click',()=>{fontSize=Math.min(1.6,fontSize+.1); document.getElementById('chapterText').style.fontSize=fontSize+'rem';});
@@ -691,39 +794,6 @@ document.querySelector('.sp-bar-track').addEventListener('click', async (e)=>{
 
 
 
-function isMobileDevice() {
-    return (
-        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768
-    );
-}
-
-if (isMobileDevice()) {
-    document.body.innerHTML = `
-        <div style="
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            flex-direction:column;
-            width:100vw;
-            height:100vh;
-            background:#0b1020;
-            color:white;
-            font-family:Arial,sans-serif;
-            text-align:center;
-            padding:20px;
-        ">
-            <h1 style="font-size:2rem;margin-bottom:15px;">
-                Desktop Only
-            </h1>
-
-            <p style="max-width:420px;line-height:1.6;">
-                This website is only available on desktop or laptop devices.
-                Please visit using a larger screen for the best experience.
-            </p>
-        </div>
-    `;
-}
 
 </script>
 </body>
